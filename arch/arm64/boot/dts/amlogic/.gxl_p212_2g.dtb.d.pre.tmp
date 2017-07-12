@@ -1,0 +1,14 @@
+gxl_p212_2g.o: arch/arm64/boot/dts/amlogic/gxl_p212_2g.dts \
+ arch/arm64/boot/dts/include/dt-bindings/interrupt-controller/arm-gic.h \
+ arch/arm64/boot/dts/include/dt-bindings/interrupt-controller/irq.h \
+ arch/arm64/boot/dts/amlogic/mesongxl.dtsi \
+ arch/arm64/boot/dts/include/dt-bindings/reset/amlogic,gxl-reset.h \
+ arch/arm64/boot/dts/include/dt-bindings/clock/amlogic,gxl-clkc.h \
+ arch/arm64/boot/dts/include/dt-bindings/gpio/gxl.h \
+ arch/arm64/boot/dts/include/dt-bindings/gpio/gpio.h \
+ arch/arm64/boot/dts/include/dt-bindings/pwm/meson.h \
+ arch/arm64/boot/dts/include/dt-bindings/input/input.h \
+ arch/arm64/boot/dts/include/dt-bindings/input/linux-event-codes.h \
+ arch/arm64/boot/dts/include/dt-bindings/input/meson_rc.h \
+ arch/arm64/boot/dts/include/dt-bindings/pwm/pwm.h \
+ arch/arm64/boot/dts/amlogic/mesongxbb-gpu-mali450.dtsi
