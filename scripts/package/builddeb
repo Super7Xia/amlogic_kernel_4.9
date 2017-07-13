@@ -204,7 +204,7 @@ fi
 for script in postinst postrm preinst prerm ; do
 	mkdir -p "$tmpdir$debhookdir/$script.d"
 	cat <<EOF > "$tmpdir/DEBIAN/$script"
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -253,7 +253,7 @@ fi
 cat <<EOF > debian/changelog
 $sourcename ($packageversion) $distribution; urgency=low
 
- Custom built Linux kernel.
+ *custom built Linux kernel.
 
  -- $maintainer  $(date -R)
 EOF
