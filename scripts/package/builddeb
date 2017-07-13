@@ -29,28 +29,6 @@ create_package() {
 	# in case we are in a restrictive umask environment like 0077
 	chmod -R a+rX "$pdir"
 
-	# Create preinstall and post install script to remove dtb
-	if [[ "$1" == *dtb* ]]; then
-		echo "if [ -d /boot/dtb-$version ]; then mv /boot/dtb-$version /boot/dtb-$version.old; fi" >> $pdir/DEBIAN/preinst
-		echo "if [ -d /boot/dtb.old ]; then rm -rf /boot/dtb.old; fi" >> $pdir/DEBIAN/preinst
-		echo "if [ -d /dtb ]; then mv /dtb /dtb.old; fi" >> $pdir/DEBIAN/preinst
-		echo "if [ -d /boot/dtb ]; then mv /boot/dtb /boot/dtb.old; fi" >> $pdir/DEBIAN/preinst
-		echo "exit 0" >> $pdir/DEBIAN/preinst
-		chmod 775 $pdir/DEBIAN/preinst
-		#
-		echo "if [ -d /boot/dtb-$version.old ]; then rm -rf /boot/dtb-$version.old; fi" >> $pdir/DEBIAN/postinst
-		echo "ln -sf dtb-$version /boot/dtb > /dev/null 2>&1 || mv /boot/dtb-$version /boot/dtb" >> $pdir/DEBIAN/postinst
-		echo "exit 0" >> $pdir/DEBIAN/postinst
-		chmod 775 $pdir/DEBIAN/postinst
-	fi
-	
-	# Create postinstall script for headers
-	if [[ "$1" == *headers* ]]; then
-		echo "cd /usr/src/linux-headers-$version; echo \"Compiling headers - please wait ...\"; make -s scripts >/dev/null 2>&1" >> $pdir/DEBIAN/postinst
-		echo "exit 0" >> $pdir/DEBIAN/postinst
-		chmod 775 $pdir/DEBIAN/postinst
-	fi
-	
 	# Create the package
 	dpkg-gencontrol $forcearch -Vkernel:debarch="${debarch}" -p$pname -P"$pdir"
 	dpkg --build "$pdir" ..
@@ -150,9 +128,7 @@ esac
 BUILD_DEBUG="$(grep -s '^CONFIG_DEBUG_INFO=y' $KCONFIG_CONFIG || true)"
 
 # Setup the directory structure
-rm -rf "$tmpdir" "$fwdir" "$kernel_headers_dir" "$libc_headers_dir" "$dbg_dir" "$dtb_dir" $objtree/debian/files
-mkdir -m 755 -p "$dtb_dir/DEBIAN"
-mkdir -p "$dtb_dir/boot/dtb-$version" "$dtb_dir/usr/share/doc/$dtb_packagename"
+rm -rf "$tmpdir" "$fwdir" "$kernel_headers_dir" "$libc_headers_dir" "$dbg_dir" $objtree/debian/files
 mkdir -m 755 -p "$tmpdir/DEBIAN"
 mkdir -p "$tmpdir/lib" "$tmpdir/boot"
 mkdir -p "$fwdir/lib/firmware/$version/"
@@ -173,7 +149,7 @@ fi
 if [ -e $KBUILD_IMAGE ]; then
 	cp $KBUILD_IMAGE "$tmpdir/$installed_image_path"
 else
-	cp arch/$ARCH/boot/Image "$tmpdir/$installed_image_path"
+	cp arch/$ARCH/boot/$KBUILD_IMAGE "$tmpdir/$installed_image_path"
 fi
 
 if grep -q "^CONFIG_OF=y" $KCONFIG_CONFIG ; then
@@ -250,16 +226,6 @@ exit 0
 EOF
 	chmod 755 "$tmpdir/DEBIAN/$script"
 done
-
-##
-## Create sym link to kernel image
-##
-sed -e "s/set -e//g" -i $tmpdir/DEBIAN/postinst
-sed -e "s/exit 0//g" -i $tmpdir/DEBIAN/postinst
-cat >> $tmpdir/DEBIAN/postinst <<EOT 
-ln -sf $(basename $installed_image_path) /boot/zImage > /dev/null 2>&1 || mv /$installed_image_path /boot/zImage
-exit 0
-EOT
 
 # Try to determine maintainer and email values
 if [ -n "$DEBEMAIL" ]; then
@@ -384,8 +350,6 @@ mkdir -p "$destdir"
 ln -sf "/usr/src/linux-headers-$version" "$kernel_headers_dir/lib/modules/$version/build"
 rm -f "$objtree/debian/hdrsrcfiles" "$objtree/debian/hdrobjfiles"
 
-(cd "$destdir"; make M=scripts clean)
-
 cat <<EOF >> debian/control
 
 Package: $kernel_headers_packagename
@@ -412,16 +376,6 @@ EOF
 
 	create_package "$fwpackagename" "$fwdir"
 fi
-
-cat <<EOF >> debian/control
-
-Package: $dtb_packagename
-Architecture: any
-Description: Linux DTB, version $version
- This package contains device blobs from the Linux kernel, version $version.
-EOF
-
-create_package "$dtb_packagename" "$dtb_dir"
 
 cat <<EOF >> debian/control
 
